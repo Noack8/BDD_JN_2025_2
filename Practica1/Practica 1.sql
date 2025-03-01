@@ -37,9 +37,25 @@ having  count(*) = ( --Autoreunion
 	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Relacionamos el año de la busqueda anterior con el maximo actual
 )
 
+--Consulta 5 por Juan:
+--Listar los estados con más casos recuperados con neumonía.
+
+select ENTIDAD_NAC, count(*) as numero_Casos --Resultados esperados
+from casos_recuperados	--Todos los casos recuperados
+where NEUMONIA = 1	--1 Significa que si tenian neumonia
+group by ENTIDAD_NAC	--Agrupamos por estados
+order by numero_Casos desc	--Los acomodamos en orden porque YOLO
 
 --Una vista de casos confirmados y columnas de interes
 --Por Juan
+/*
+go --Vista para gente que se recupero
+create view casos_recuperados as
+select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
+from casos_confirmados	--Todos los casos recuperados
+where CAST(left(FECHA_DEF,4) as INT) = 9999 --Estos son los casos recuperados, lo tuve que hacer asi por que year no funciona con esta columna
+--Sustrae los primeros 4 valores de una cadena y los tranforma a enteros para hacer la comparacion
+*/
 /*
 go
 create view casos_confirmados as
