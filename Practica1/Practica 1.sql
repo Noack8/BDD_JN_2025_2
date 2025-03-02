@@ -267,3 +267,13 @@ AND TIPO_PACIENTE = 2
 AND YEAR(FECHA_INGRESO) = '2020'
 GROUP BY ENTIDAD_NAC
 order by Porcentaje_Casos desc	--Me gusta que vaya de mayor a menor siempre
+
+
+--Consulta 14 por Juan
+--Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
+
+select EDAD, count(*) as Cantidad_de_Fallecidos
+from casos_confirmados
+where CAST(left(FECHA_DEF,4) as INT) = 2020 or CAST(left(FECHA_DEF,4) as INT) = 2021
+group by EDAD
+order by Cantidad_de_Fallecidos desc
