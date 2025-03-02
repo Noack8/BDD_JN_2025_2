@@ -197,6 +197,26 @@ FROM datoscovid JOIN cat_entidades
 GROUP BY entidad, YEAR(FECHA_INGRESO)
 ORDER BY entidad, YEAR(FECHA_INGRESO);
 
+--Consulta 8 por Juan:
+--Listar el municipio con menos defunciones en el mes con más casos confirmados con neumonía en los años 2020 y 2021.
+
+select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso
+from casos_confirmados
+where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020', '2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
+group by MUNICIPIO_RES, YEAR(FECHA_INGRESO),  MONTH(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos para poder valorar lo resultados
+having  count(*) = (  
+	select min(Casos_con_Defuncion)	--Busqueda de casos de defuncion que se les detectaron neumonia
+	from(
+		select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as Anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso,count(*) as Casos_con_Defuncion
+		from casos_confirmados
+		where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020', '2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
+		--Estrechamos la busqueda a valores que necesitamos detectar y eliminar los casos donde se curaron
+		group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO), ENTIDAD_NAC	--El orden de agrupacion es importante
+	) as T1
+	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)
+	and T1.Mes_Ingreso = MONTH(FECHA_INGRESO) --Comparamos por mes para que se pueda listar
+)
+order by YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO)
 
 /*****************************************
  9. Listar el top 3 de municipios con menos casos recuperados en el año 2021.
