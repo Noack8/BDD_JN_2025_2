@@ -1,3 +1,23 @@
+/*****************************************
+Vistas utilizadas
+Responsable de la vista: Juan
+*****************************************/
+
+
+go --Vista para gente que se recupero
+create view casos_recuperados as
+select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
+from casos_confirmados	--Todos los casos recuperados
+where CAST(left(FECHA_DEF,4) as INT) = 9999 --Estos son los casos recuperados, lo tuve que hacer asi por que year no funciona con esta columna
+--Sustrae los primeros 4 valores de una cadena y los tranforma a enteros para hacer la comparacion
+
+go
+create view casos_confirmados as
+select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
+from datoscovid
+where CLASIFICACION_FINAL in ('1', '2', '3')	--Se utiliza esta 1,2,3 porque en el catalogo son las confirmaciones de la enfermedad
+
+
 --Practica 1
 
 --Hay el años que son entre 2020 2021 2022
@@ -16,11 +36,14 @@ having count(*) =   ( --autoreunion
 					    ) as T1
 					)
 
---order by año desc--Esto genera un costo extra de procesamiento
-
---Consulta 2 por Juan:
---Listar el municipio con más casos confirmados recuperados por estado y por año.
-
+/*****************************************
+Consulta 02. Listar el municipio con más casos confirmados recuperados por estado y por año.
+Requisitos: Agrupaciones por estado municipio y año
+Significado de los valores de los catálogos: casos_Recuperados es una vista que cita a la gente que se curo
+Responsable de la consulta: Juan
+Comentarios: -- aquí, explicar las instrucciones adicionales
+Utilizadas y no explicadas en clase.
+*****************************************/
 select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Sacamo los datos para que se vea shido
 from casos_recuperados	--Uso de la vista de casos confirmados para disminuir la busqueda
 group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos para poder valorar lo resultados
@@ -34,25 +57,7 @@ having  count(*) = (  --Autoreunion
 	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Usamos la concordancia donde el anio corresponda 
 	and T1.ENTIDAD_NAC = ENTIDAD_NAC  -- Usamos el estado en particular
 )
-
-/*Prueba 1
-select ENTIDAD_NAC, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Sacamo los datos para que se vea shido
-from casos_confirmados	--Uso de la vista de casos confirmados para disminuir la busqueda
-where CAST(LEFT(FECHA_DEF, 4) AS INT) = 9999 --Seleccionamos solo los casos recuperados
-group by ENTIDAD_NAC, YEAR(FECHA_INGRESO)	--Agrupamos para poder valorar lo resultados
-having  count(*) = ( --Autoreunion
-	select max(total_Recuperados) --Escogemos los valores maximos contados por año
-	from(
-		select ENTIDAD_NAC, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Resultados de interes
-		from casos_confirmados	--Todos los casos recuperados
-		where CAST(left(FECHA_DEF,4) as INT) = 9999 --Estos son los casos recuperados, lo tuve que hacer asi por que year no funciona con esta columna
-		--Sustrae los primeros 4 valores de una cadena y los tranforma a enteros para hacer la comparacion
-		group by ENTIDAD_NAC, YEAR(FECHA_INGRESO)	--Con ello podemos juntar los valores a tomar en cuenta
-	)as T1
-	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Relacionamos el año de la busqueda anterior con el maximo actual
-)
-*/
-
+	
 /*****************************************
  3. Listar el porcentaje de casos confirmados en cada una de las siguientes morbilidades a nivel nacional: diabetes, obesidad e hipertensión.
  
@@ -139,32 +144,19 @@ UNION
 DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
 DROP TABLE IF EXISTS CASOS_OBESIDAD;
 
---Consulta 5 por Juan:
---Listar los estados con más casos recuperados con neumonía.
-
+/*****************************************
+Consulta 05. Listar los estados con más casos recuperados con neumonía.
+Requisitos: Agrupaciones por estado y buscar los casos por neumonia
+Significado de los valores de los catálogos: casos_Recuperados es una vista que cita a la gente que se curo
+Responsable de la consulta: Juan
+Comentarios: -- aquí, explicar las instrucciones adicionales
+Utilizadas y no explicadas en clase.
+*****************************************/
 select ENTIDAD_NAC, count(*) as numero_Casos --Resultados esperados
 from casos_recuperados	--Todos los casos recuperados
 where NEUMONIA = 1	--1 Significa que si tenian neumonia
 group by ENTIDAD_NAC	--Agrupamos por estados
 order by numero_Casos desc	--Los acomodamos en orden porque YOLO
-
---Una vista de casos confirmados y columnas de interes
---Por Juan
-/*
-go --Vista para gente que se recupero
-create view casos_recuperados as
-select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
-from casos_confirmados	--Todos los casos recuperados
-where CAST(left(FECHA_DEF,4) as INT) = 9999 --Estos son los casos recuperados, lo tuve que hacer asi por que year no funciona con esta columna
---Sustrae los primeros 4 valores de una cadena y los tranforma a enteros para hacer la comparacion
-*/
-/*
-go
-create view casos_confirmados as
-select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
-from datoscovid
-where CLASIFICACION_FINAL in ('1', '2', '3')	--Se utiliza esta 1,2,3 porque en el catalogo son las confirmaciones de la enfermedad
-*/
 
 /*****************************************
  6. Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
@@ -197,9 +189,14 @@ FROM datoscovid JOIN cat_entidades
 GROUP BY entidad, YEAR(FECHA_INGRESO)
 ORDER BY entidad, YEAR(FECHA_INGRESO);
 
---Consulta 8 por Juan:
---Listar el municipio con menos defunciones en el mes con más casos confirmados con neumonía en los años 2020 y 2021.
-
+/*****************************************
+Consulta 08. Listar el municipio con menos defunciones en el mes con más casos confirmados con neumonía en los años 2020 y 2021.
+Requisitos: Agrupaciones por municipios y seleccionar por meses
+Significado de los valores de los catálogos: casos_confirmados para separa la inf 
+Responsable de la consulta: Juan
+Comentarios: -- aquí, explicar las instrucciones adicionales
+Utilizadas y no explicadas en clase.
+*****************************************/
 select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso
 from casos_confirmados
 where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020', '2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
@@ -237,18 +234,14 @@ where YEAR(FECHA_INGRESO) = 2021
 group by MUNICIPIO_RES
 order by CASOS_RECUPERADOS;
 
---Consulta 11 por Juan:
---Listar el porcentaje de casos hospitalizados por estado en el año 2020.
-/*	-- Prueba 1 para poder contarlos casos hospitalizados con exito
-select sum(T1.Casos_Hospitalizados)
-from(
-	select ENTIDAD_NAC, MONTH(FECHA_INGRESO) as mes, count(*) as Casos_Hospitalizados
-	from datoscovid
-	where CLASIFICACION_FINAL in ('1', '2', '3') and TIPO_PACIENTE = 2 and YEAR(FECHA_INGRESO) = '2020'
-	group by MONTH(FECHA_INGRESO), ENTIDAD_NAC
-) as  T1
-*/
-
+/*****************************************
+Consulta 11. Listar el porcentaje de casos hospitalizados por estado en el año 2020.
+Requisitos: Buscar la cantidad de casos para poder hacer calculos de porcentajes
+Significado de los valores de los catálogos: Tenemos que usar los datos bases para poder sacar el inf de hospital
+Responsable de la consulta: Juan
+Comentarios: -- aquí, explicar las instrucciones adicionales
+Utilizadas y no explicadas en clase.
+*****************************************/
 SELECT ENTIDAD_NAC, 
 (COUNT(*) * 100.0 / (	--Calculo del procentaje usando numero*100%/Total
 	SELECT SUM(T1.Casos_Hospitalizados)
@@ -268,10 +261,14 @@ AND YEAR(FECHA_INGRESO) = '2020'
 GROUP BY ENTIDAD_NAC
 order by Porcentaje_Casos desc	--Me gusta que vaya de mayor a menor siempre
 
-
---Consulta 14 por Juan
---Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
-
+/*****************************************
+Consulta 14. Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
+Requisitos: categorizar por edades y contar para saber la cantidad de fallecidos y poder listar
+Significado de los valores de los catálogos: usamos tecnicas de cast
+Responsable de la consulta: Juan
+Comentarios: -- aquí, explicar las instrucciones adicionales
+Utilizadas y no explicadas en clase.
+*****************************************/
 select EDAD, count(*) as Cantidad_de_Fallecidos
 from casos_confirmados
 where CAST(left(FECHA_DEF,4) as INT) = 2020 or CAST(left(FECHA_DEF,4) as INT) = 2021
