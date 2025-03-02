@@ -1,4 +1,63 @@
 /*****************************************
+1. Listar el top 5 de las entidades con más casos 
+confirmados por cada uno de los años registrados en la base de datos.
+Requisitos:
+- Mostrar el nombre de la entidad.
+- Mostrar solo los 5 primeros lugares por año.
+Significado de los valores de los catálogos:
+- CLASIFICACION_FINAL: 1, 2, 3, como nos interesan solo los CASOS CONFIRMADOS,
+tomamos las primeras 3 clasificaciones que son de casos confirmados donde la diferencia entre si
+era que organismo habia confirmado los casos. 
+Responsable: Armando Eduardo Sánchez Herrera 
+Comentarios:
+- Se utiliza una CTE (Common Table Expression) para calcular el número
+de casos confirmados por entidad y año.
+	--Una CTE es una consulta temporal que se define dentro de una sentencia SQL 
+	y que se puede referenciar dentro de la misma consulta
+- Se hace un JOIN con la tabla de catálogo de entidades para obtener el nombre de la entidad.
+- Se utiliza ROW_NUMBER() que es una función de ventana en SQL que asigna 
+un número único a cada fila dentro de una partición de un conjunto de resultados. 
+En este caso se uso para asignar un ranking a cada entidad dentro de cada año. 
+Primero los ordene en orden descendente y con ranking solo desplegue los primeros 5. 
+*****************************************/
+WITH CasosPorEntidad AS (
+    SELECT 
+        ENTIDAD_RES, 
+        YEAR(FECHA_INGRESO) AS año, 
+        COUNT(*) AS num_casos_confirmados
+    FROM 
+        datoscovid
+    WHERE 
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+    GROUP BY 
+        ENTIDAD_RES, YEAR(FECHA_INGRESO)
+)
+SELECT 
+    ce.entidad AS nombre_entidad, 
+    cpe.año, 
+    cpe.num_casos_confirmados
+FROM (
+    SELECT 
+        ENTIDAD_RES, 
+        año, 
+        num_casos_confirmados,
+        ROW_NUMBER() OVER (PARTITION BY año ORDER BY num_casos_confirmados DESC) AS ranking
+    FROM 
+        CasosPorEntidad
+) AS cpe
+JOIN 
+    cat_entidades ce ON cpe.ENTIDAD_RES = ce.clave
+WHERE 
+    ranking <= 5
+ORDER BY 
+    cpe.año, cpe.ranking;
+
+
+
+
+
+
+/*****************************************
 Vistas utilizadas
 Responsable de la vista: Juan
 *****************************************/
