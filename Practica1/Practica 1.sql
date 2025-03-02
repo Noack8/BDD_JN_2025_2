@@ -37,6 +37,93 @@ having  count(*) = ( --Autoreunion
 	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Relacionamos el año de la busqueda anterior con el maximo actual
 )
 
+
+/*****************************************
+ 3. Listar el porcentaje de casos confirmados en cada una de las siguientes morbilidades a nivel nacional: diabetes, obesidad e hipertensión.
+ 
+ En CLASIFICACION_FINAL los valores 1, 2 y 3 son confirmados.
+ DIABETES HIPERTENSION OBESIDAD son columnas de catálogo SI/NO donde 1 es SI
+ 
+ Responsable de la consulta: Keb
+ 
+ Comentarios:
+  
+ *****************************************/
+DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
+DROP TABLE IF EXISTS CASOS_OBESIDAD;
+
+SELECT
+	DIABETES,
+	HIPERTENSION,
+	OBESIDAD,
+	CASE
+		WHEN CLASIFICACION_FINAL IN (1, 2, 3) then 1
+		ELSE 0
+	END AS CONFIRMADO_COVID,
+	COUNT(1) AS CASOS
+INTO CASOS_COMORBILIDADES
+FROM datoscovid
+GROUP BY
+	OBESIDAD,
+	DIABETES,
+	HIPERTENSION,
+	CLASIFICACION_FINAL
+HAVING (OBESIDAD = 1 OR DIABETES = 1 OR HIPERTENSION = 1);
+
+-- Obtener el total de casos por cada enfermedad
+Declare @TOTAL_OBESIDAD int;
+SELECT @TOTAL_OBESIDAD = sum(CASOS)
+FROM CASOS_COMORBILIDADES
+WHERE OBESIDAD = 1;
+
+
+Declare @TOTAL_DIABETES int;
+SELECT @TOTAL_DIABETES = sum(CASOS)
+FROM CASOS_COMORBILIDADES
+WHERE DIABETES = 1;
+
+
+Declare @TOTAL_HIPERTENSION int;
+SELECT @TOTAL_HIPERTENSION = sum(CASOS)
+FROM CASOS_COMORBILIDADES
+WHERE HIPERTENSION = 1;
+
+
+WITH
+	CASOS_COMOR_CONFIRMADA
+	AS
+	(
+		SELECT
+			*
+		FROM
+			CASOS_COMORBILIDADES
+		WHERE CONFIRMADO_COVID = 1
+	)
+
+	SELECT
+		'Obesidad' as Enfermedad,
+		CAST(SUM(CASOS) * 100.0 / @TOTAL_OBESIDAD AS decimal(4, 2)) as PorcentajeConfirmadoCovid
+	FROM CASOS_COMOR_CONFIRMADA
+	GROUP BY OBESIDAD
+	HAVING OBESIDAD = 1
+UNION
+	SELECT
+		'Diabetes' as Enfermedad,
+		CAST(SUM(CASOS) * 100.0 / @TOTAL_DIABETES AS decimal(4, 2)) as PorcentajeConfirmadoCovid
+	FROM CASOS_COMOR_CONFIRMADA
+	GROUP BY DIABETES
+	HAVING DIABETES = 1
+UNION
+	SELECT
+		'Hipertension' as Enfermedad,
+		CAST(SUM(CASOS) * 100.0 / @TOTAL_DIABETES AS decimal(4, 2)) as PorcentajeConfirmadoCovid
+	FROM CASOS_COMOR_CONFIRMADA
+	GROUP BY HIPERTENSION
+	HAVING HIPERTENSION = 1;
+
+DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
+DROP TABLE IF EXISTS CASOS_OBESIDAD;
+
 --Consulta 5 por Juan:
 --Listar los estados con más casos recuperados con neumonía.
 
