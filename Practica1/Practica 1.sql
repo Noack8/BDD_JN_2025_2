@@ -21,6 +21,21 @@ having count(*) =   ( --autoreunion
 --Consulta 2 por Juan:
 --Listar el municipio con más casos confirmados recuperados por estado y por año.
 
+select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Sacamo los datos para que se vea shido
+from casos_recuperados	--Uso de la vista de casos confirmados para disminuir la busqueda
+group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos para poder valorar lo resultados
+having  count(*) = (  --Autoreunion
+	select max(casos_recuperados)	--Buscamos el municipio por estaddo y año con mayor numero de casos recuperados
+	from(
+		select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as Anio_Ingreso,count(*) as Casos_Recuperados --Datos relevantes
+		from casos_recuperados --Vista rapida
+		group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), ENTIDAD_NAC	--El orden de arupacion es importante
+	) as T1 
+	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Usamos la concordancia donde el anio corresponda 
+	and T1.ENTIDAD_NAC = ENTIDAD_NAC  -- Usamos el estado en particular
+)
+
+/*Prueba 1
 select ENTIDAD_NAC, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Sacamo los datos para que se vea shido
 from casos_confirmados	--Uso de la vista de casos confirmados para disminuir la busqueda
 where CAST(LEFT(FECHA_DEF, 4) AS INT) = 9999 --Seleccionamos solo los casos recuperados
@@ -36,7 +51,7 @@ having  count(*) = ( --Autoreunion
 	)as T1
 	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Relacionamos el año de la busqueda anterior con el maximo actual
 )
-
+/*
 
 /*****************************************
  3. Listar el porcentaje de casos confirmados en cada una de las siguientes morbilidades a nivel nacional: diabetes, obesidad e hipertensión.
