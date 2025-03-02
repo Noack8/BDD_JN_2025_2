@@ -236,3 +236,34 @@ from datoscovid
 where YEAR(FECHA_INGRESO) = 2021
 group by MUNICIPIO_RES
 order by CASOS_RECUPERADOS;
+
+--Consulta 11 por Juan:
+--Listar el porcentaje de casos hospitalizados por estado en el año 2020.
+/*	-- Prueba 1 para poder contarlos casos hospitalizados con exito
+select sum(T1.Casos_Hospitalizados)
+from(
+	select ENTIDAD_NAC, MONTH(FECHA_INGRESO) as mes, count(*) as Casos_Hospitalizados
+	from datoscovid
+	where CLASIFICACION_FINAL in ('1', '2', '3') and TIPO_PACIENTE = 2 and YEAR(FECHA_INGRESO) = '2020'
+	group by MONTH(FECHA_INGRESO), ENTIDAD_NAC
+) as  T1
+*/
+
+SELECT ENTIDAD_NAC, 
+(COUNT(*) * 100.0 / (	--Calculo del procentaje usando numero*100%/Total
+	SELECT SUM(T1.Casos_Hospitalizados)
+	FROM (
+		SELECT ENTIDAD_NAC, MONTH(FECHA_INGRESO) AS mes, COUNT(*) AS Casos_Hospitalizados --Contamos a los usuarios que fueron hospitalizados
+		FROM datoscovid	--Mi vista no tiene los datos de hospital por eso lo hago asi
+		WHERE CLASIFICACION_FINAL IN ('1', '2', '3')	-- Para solicitar los casos confirmados
+		AND TIPO_PACIENTE = 2	--Paciente que fue hospitalizado
+        AND YEAR(FECHA_INGRESO) = '2020'	--Restringuimos la busqueda en el año 2020
+        GROUP BY MONTH(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos por entidades y meses para poder hacer la cuenta completa
+     ) AS T1))
+AS Porcentaje_Casos -- Variable que usamos para calcular el procentaje, total de persona hospiatalizada en 2020
+FROM datoscovid
+WHERE CLASIFICACION_FINAL IN ('1', '2', '3') 
+AND TIPO_PACIENTE = 2 
+AND YEAR(FECHA_INGRESO) = '2020'
+GROUP BY ENTIDAD_NAC
+order by Porcentaje_Casos desc	--Me gusta que vaya de mayor a menor siempre
