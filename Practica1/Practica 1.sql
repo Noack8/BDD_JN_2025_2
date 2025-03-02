@@ -181,3 +181,23 @@ FROM datoscovid JOIN cat_entidades
 	ON datoscovid.ENTIDAD_UM = cat_entidades.clave
 GROUP BY entidad, YEAR(FECHA_INGRESO)
 ORDER BY entidad, YEAR(FECHA_INGRESO);
+
+
+/*****************************************
+ 9. Listar el top 3 de municipios con menos casos recuperados en el año 2021.
+ 
+ Año(FECHA_DEF) = 9999 son casos recuperados
+ 
+ Responsable de la consulta: Keb
+ 
+ Comentarios:
+  CAST(left(FECHA_DEF,4) as INT) es para sacar el año
+  IIF es el operador ternario, más simple que un CASE
+ *****************************************/
+
+select top 3
+	MUNICIPIO_RES, count(IIF(CAST(left(FECHA_DEF,4) as INT) = 9999, 1, NULL)) as CASOS_RECUPERADOS
+from datoscovid
+where YEAR(FECHA_INGRESO) = 2021
+group by MUNICIPIO_RES
+order by CASOS_RECUPERADOS;
