@@ -51,7 +51,7 @@ having  count(*) = ( --Autoreunion
 	)as T1
 	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Relacionamos el año de la busqueda anterior con el maximo actual
 )
-/*
+*/
 
 /*****************************************
  3. Listar el porcentaje de casos confirmados en cada una de las siguientes morbilidades a nivel nacional: diabetes, obesidad e hipertensión.
