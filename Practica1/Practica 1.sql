@@ -150,3 +150,34 @@ select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_IN
 from datoscovid
 where CLASIFICACION_FINAL in ('1', '2', '3')	--Se utiliza esta 1,2,3 porque en el catalogo son las confirmaciones de la enfermedad
 */
+
+/*****************************************
+ 6. Listar el total de casos confirmados/sospechosos por estado en cada uno de los años registrados en la base de datos.
+ 
+ Se usa la fecha de ingreso porque es el dato que mejor se adapta
+ En CLASIFICACION_FINAL los valores 1, 2 y 3 son confirmados, 6 sospechoso.
+ 
+ Responsable de la consulta: Keb
+ 
+ Comentarios:
+  
+ *****************************************/
+
+
+SELECT
+	YEAR(FECHA_INGRESO) AS Año,
+	entidad AS Entidad,
+	COUNT(
+		CASE
+			WHEN CLASIFICACION_FINAL IN (1,2,3) THEN 1
+		END
+	) as CASOS_CONFIRMADOS,
+	COUNT(
+		CASE
+			WHEN CLASIFICACION_FINAL = 4 THEN 1
+		END
+	) AS CASOS_SOSPECHOSOS
+FROM datoscovid JOIN cat_entidades
+	ON datoscovid.ENTIDAD_UM = cat_entidades.clave
+GROUP BY entidad, YEAR(FECHA_INGRESO)
+ORDER BY entidad, YEAR(FECHA_INGRESO);
