@@ -204,6 +204,42 @@ DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
 DROP TABLE IF EXISTS CASOS_OBESIDAD;
 
 /*****************************************
+4. Listar los municipios que no tengan casos confirmados en todas las morbilidades: hipertensión, obesidad, diabetes y tabaquismo.
+Requisitos:
+- Mostrar el nombre del municipio.
+- Mostrar solo los municipios que no tienen casos confirmados en ninguna de las morbilidades.
+Significado de los valores de los catálogos:
+- CLASIFICACION_FINAL: 1, 2, 3 = Casos confirmados.
+- HIPERTENSION, OBESIDAD, DIABETES, TABAQUISMO: 1 = Sí, 0 = No.
+Responsable de la consulta: Armando Eduardo Sánchez Herrera 
+Comentarios:
+- Se utiliza una CTE para calcular el número de casos confirmados para cada morbilidad por municipio.
+- Se filtran los municipios que no tienen casos confirmados en ninguna de las morbilidades.
+*****************************************/
+WITH CasosMorbilidad AS (
+    SELECT 
+        MUNICIPIO_RES,
+        SUM(CASE WHEN HIPERTENSION = 1 THEN 1 ELSE 0 END) AS casos_hipertension,
+        SUM(CASE WHEN OBESIDAD = 1 THEN 1 ELSE 0 END) AS casos_obesidad,
+        SUM(CASE WHEN DIABETES = 1 THEN 1 ELSE 0 END) AS casos_diabetes,
+        SUM(CASE WHEN TABAQUISMO = 1 THEN 1 ELSE 0 END) AS casos_tabaquismo
+    FROM 
+        datoscovid
+    WHERE 
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+    GROUP BY 
+        MUNICIPIO_RES
+)
+SELECT 
+    MUNICIPIO_RES
+FROM 
+    CasosMorbilidad
+WHERE 
+    casos_hipertension = 0 
+    AND casos_obesidad = 0 
+    AND casos_diabetes = 0 
+    AND casos_tabaquismo = 0;
+/*****************************************
 Consulta 05. Listar los estados con más casos recuperados con neumonía.
 Requisitos: Agrupaciones por estado y buscar los casos por neumonia
 Significado de los valores de los catálogos: casos_Recuperados es una vista que cita a la gente que se curo
