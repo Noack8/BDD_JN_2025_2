@@ -592,6 +592,65 @@ ORDER BY
         entidad;
 
 /*****************************************
+13. Listar porcentajes de casos confirmados por género en el rango de edades de 20 a 30 años, de 31 a 40 años, de 41 a 50 años, de 51 a 60 años y mayores a 60 años a nivel nacional.
+Requisitos:
+- Mostrar el porcentaje de casos confirmados por género en los rangos de edad especificados.
+Significado de los valores de los catálogos:
+- CLASIFICACION_FINAL: 1, 2, 3 = Casos confirmados.
+- SEXO: 1 = Mujer, 2 = Hombre.
+Responsable de la consulta: Armando Eduardo Sánchez Herrera 
+Comentarios:
+- Se utiliza una CTE para calcular el número de casos confirmados por género y rango de edad.
+- Se utiliza una expresión CASE para definir los rangos de edad.
+- Se calcula el porcentaje de casos por género y rango de edad.
+*****************************************/
+WITH CasosPorEdad AS (
+    SELECT 
+        SEXO, 
+        CASE 
+            WHEN EDAD BETWEEN 20 AND 30 THEN '20-30'
+            WHEN EDAD BETWEEN 31 AND 40 THEN '31-40'
+            WHEN EDAD BETWEEN 41 AND 50 THEN '41-50'
+            WHEN EDAD BETWEEN 51 AND 60 THEN '51-60'
+            ELSE '60+' 
+        END AS rango_edad, 
+        COUNT(*) AS total_casos
+    FROM 
+        datoscovid
+    WHERE 
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+    GROUP BY 
+        SEXO, 
+        CASE 
+            WHEN EDAD BETWEEN 20 AND 30 THEN '20-30'
+            WHEN EDAD BETWEEN 31 AND 40 THEN '31-40'
+            WHEN EDAD BETWEEN 41 AND 50 THEN '41-50'
+            WHEN EDAD BETWEEN 51 AND 60 THEN '51-60'
+            ELSE '60+' 
+        END
+),
+TotalCasos AS (
+    SELECT 
+        COUNT(*) AS total
+    FROM 
+        datoscovid
+    WHERE 
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+)
+SELECT 
+    CASE 
+        WHEN SEXO = 1 THEN 'Mujer'    
+        WHEN SEXO = 2 THEN 'Hombre'    
+        ELSE 'No especificado'        
+    END AS género,
+    rango_edad, 
+    CAST(total_casos * 100.0 / (SELECT total FROM TotalCasos) AS DECIMAL(5, 2)) AS porcentaje
+FROM 
+    CasosPorEdad
+ORDER BY 
+    SEXO, rango_edad;
+
+/*****************************************
 Consulta 14. Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
 Requisitos: categorizar por edades y contar para saber la cantidad de fallecidos y poder listar
 Significado de los valores de los catálogos: usamos tecnicas de cast
