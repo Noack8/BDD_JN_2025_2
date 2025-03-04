@@ -126,7 +126,7 @@ having  count(*) = (  --Autoreunion
  Responsable de la consulta: Keb
  
  Comentarios:
-  
+  Se separó en varias consultas para no realizar varias veces la misma consulta
  *****************************************/
 DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
 DROP TABLE IF EXISTS CASOS_OBESIDAD;
@@ -319,6 +319,41 @@ AND TIPO_PACIENTE = 2
 AND YEAR(FECHA_INGRESO) = '2020'
 GROUP BY ENTIDAD_NAC
 order by Porcentaje_Casos desc	--Me gusta que vaya de mayor a menor siempre
+
+/*****************************************
+12. Listar total de casos negativos por estado en los años 2020 y 2021. 
+
+CLASIFICACION_FINAL = 7 : Casos negativos
+
+Responsable de la consulta: Keb
+
+Comentarios:
+ *****************************************/
+SELECT
+        entidad AS Entidad,
+        COUNT(
+                CASE
+                        WHEN (
+                                CLASIFICACION_FINAL = 7
+                AND YEAR (FECHA_INGRESO) = 2020
+                        ) THEN 1
+                END
+        ) as CASOS_NEGATIVOS_2020,
+        COUNT(
+                CASE
+                        WHEN (
+                                CLASIFICACION_FINAL = 7
+                AND YEAR (FECHA_INGRESO) = 2021
+                        ) THEN 1
+                END
+        ) as CASOS_NEGATIVOS_2021
+FROM
+        datoscovid
+        JOIN cat_entidades ON datoscovid.ENTIDAD_UM = cat_entidades.clave
+GROUP BY
+        entidad
+ORDER BY
+        entidad;
 
 /*****************************************
 Consulta 14. Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
