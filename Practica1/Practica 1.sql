@@ -428,6 +428,108 @@ group by MUNICIPIO_RES
 order by CASOS_RECUPERADOS;
 
 /*****************************************
+
+10. Listar el porcentaje de casos confirmados por género en los años 2020 y 2021.
+
+Requisitos:
+
+- Mostrar el porcentaje de casos confirmados por género (1 = Mujer, 2 = Hombre) y por año.
+
+Significado de los valores de los catálogos:
+
+- CLASIFICACION_FINAL: 1, 2, 3 = Casos confirmados.
+
+- SEXO: 1 = Mujer, 2 = Hombre.
+
+Responsable de la consulta: Armando Eduardo Sánchez Herrera
+
+Comentarios:
+
+- Se utiliza una CTE para calcular el número de casos confirmados por género y año.
+
+- Se calcula el porcentaje de casos por género y año dividiendo el número de casos por género y año entre el total de casos por año.
+
+*****************************************/
+
+WITH CasosPorGenero AS (
+
+    SELECT 
+
+        SEXO, 
+
+        YEAR(FECHA_INGRESO) AS año, 
+
+        COUNT(*) AS total_casos
+
+    FROM 
+
+        datoscovid
+
+    WHERE 
+
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+
+        AND YEAR(FECHA_INGRESO) IN (2020, 2021)
+
+    GROUP BY 
+
+        SEXO, YEAR(FECHA_INGRESO)
+
+),
+
+TotalCasosPorAño AS (
+
+    SELECT 
+
+        YEAR(FECHA_INGRESO) AS año, 
+
+        COUNT(*) AS total
+
+    FROM 
+
+        datoscovid
+
+    WHERE 
+
+        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+
+        AND YEAR(FECHA_INGRESO) IN (2020, 2021)
+
+    GROUP BY 
+
+        YEAR(FECHA_INGRESO)
+
+)
+
+SELECT 
+
+    cpg.año,
+
+    CASE 
+
+        WHEN cpg.SEXO = 1 THEN 'Mujer'
+
+        WHEN cpg.SEXO = 2 THEN 'Hombre'
+
+        ELSE 'No especificado'
+
+    END AS género,
+
+    CAST(cpg.total_casos * 100.0 / tca.total AS DECIMAL(5, 2)) AS porcentaje
+
+FROM 
+
+    CasosPorGenero cpg
+
+JOIN 
+
+    TotalCasosPorAño tca ON cpg.año = tca.año
+
+ORDER BY 
+
+    cpg.año, cpg.SEXO;
+
+/*****************************************
 Consulta 11. Listar el porcentaje de casos hospitalizados por estado en el año 2020.
 Requisitos: Buscar la cantidad de casos para poder hacer calculos de porcentajes
 Significado de los valores de los catálogos: Tenemos que usar los datos bases para poder sacar el inf de hospital
