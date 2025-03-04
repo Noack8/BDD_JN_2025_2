@@ -285,6 +285,104 @@ GROUP BY entidad, YEAR(FECHA_INGRESO)
 ORDER BY entidad, YEAR(FECHA_INGRESO);
 
 /*****************************************
+
+7. Para el año 2020 y 2021, cuál fue el mes con más casos registrados, confirmados y sospechosos, por estado registrado en la base de datos.
+
+Requisitos:
+
+- Mostrar el nombre de la entidad.
+
+- Mostrar el mes con más casos por estado y año.
+
+Significado de los valores de los catálogos:
+
+- CLASIFICACION_FINAL: 1, 2, 3 = Casos confirmados; 6 = Casos sospechosos.
+
+Responsable de la consulta: Armando Eduardo Sanchez Herrera
+
+Comentarios:
+
+- Se utiliza una CTE para calcular el número de casos confirmados y sospechosos por estado, año y mes.
+
+- Se hace un JOIN con la tabla de catálogo de entidades para obtener el nombre de la entidad.
+
+- Se utiliza ROW_NUMBER() para asignar un ranking a cada mes dentro de cada estado y año.
+
+- Se filtran solo los meses con más casos por estado y año.
+
+*****************************************/
+
+WITH CasosPorMes AS (
+
+    SELECT 
+
+        ENTIDAD_RES, 
+
+        YEAR(FECHA_INGRESO) AS año, 
+
+        MONTH(FECHA_INGRESO) AS mes, 
+
+        COUNT(*) AS total_casos
+
+    FROM 
+
+        datoscovid
+
+    WHERE 
+
+        CLASIFICACION_FINAL IN ('1', '2', '3', '6')  -- Casos confirmados y sospechosos
+
+        AND YEAR(FECHA_INGRESO) IN (2020, 2021)
+
+    GROUP BY 
+
+        ENTIDAD_RES, YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO)
+
+)
+
+SELECT 
+
+    ce.entidad AS nombre_entidad, 
+
+    cpm.año, 
+
+    cpm.mes, 
+
+    cpm.total_casos
+
+FROM (
+
+    SELECT 
+
+        ENTIDAD_RES, 
+
+        año, 
+
+        mes, 
+
+        total_casos,
+
+        ROW_NUMBER() OVER (PARTITION BY ENTIDAD_RES, año ORDER BY total_casos DESC) AS ranking
+
+    FROM 
+
+        CasosPorMes
+
+) AS cpm
+
+JOIN 
+
+    cat_entidades ce ON cpm.ENTIDAD_RES = ce.clave
+
+WHERE 
+
+    ranking = 1
+
+ORDER BY 
+
+    cpm.año, ce.entidad;
+
+/*****************************************
 Consulta 08. Listar el municipio con menos defunciones en el mes con más casos confirmados con neumonía en los años 2020 y 2021.
 Requisitos: Agrupaciones por municipios y seleccionar por meses
 Significado de los valores de los catálogos: casos_confirmados para separa la inf 
