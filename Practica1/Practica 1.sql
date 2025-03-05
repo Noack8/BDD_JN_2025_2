@@ -322,23 +322,40 @@ Responsable de la consulta: Juan
 Comentarios: -- aquí, explicar las instrucciones adicionales
 Utilizadas y no explicadas en clase.
 *****************************************/
-select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso
-from casos_confirmados
-where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020', '2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
-group by MUNICIPIO_RES, YEAR(FECHA_INGRESO),  MONTH(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos para poder valorar lo resultados
-having  count(*) = (  
-	select min(Casos_con_Defuncion)	--Busqueda de casos de defuncion que se les detectaron neumonia
+select *
+from(
+	select ENTIDAD_RES, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso, count(*) as casos_defunsion
+	from casos_confirmados
+	where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
+	--where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020') and CAST(left(FECHA_DEF,4) as INT) != 9999
+	and MONTH(FECHA_INGRESO) = 1 
+	--and MONTH(FECHA_INGRESO) = 7
+	group by MUNICIPIO_RES, YEAR(FECHA_INGRESO),  MONTH(FECHA_INGRESO), ENTIDAD_RES	--Agrupamos para poder valorar lo resultados
+) as T2
+where T2.casos_defunsion = 1
+union
+select *
+from(
+	select ENTIDAD_RES, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso, count(*) as casos_defunsion
+	from casos_confirmados
+	--where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
+	where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020') and CAST(left(FECHA_DEF,4) as INT) != 9999
+	--and MONTH(FECHA_INGRESO) = 1 
+	and MONTH(FECHA_INGRESO) = 7
+	group by MUNICIPIO_RES, YEAR(FECHA_INGRESO),  MONTH(FECHA_INGRESO), ENTIDAD_RES	--Agrupamos para poder valorar lo resultados
+) as T3
+where T3.casos_defunsion = 1
+
+--Consulta para saber que mes es el top
+having  count(*) = (
+	select max(Casos_con_confirmados_Neumonia)
 	from(
-		select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as Anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso,count(*) as Casos_con_Defuncion
+		select YEAR(FECHA_INGRESO) as Anio_Ingreso, MONTH(FECHA_INGRESO) as Mes_Ingreso,count(*) as Casos_con_confirmados_Neumonia
 		from casos_confirmados
-		where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020', '2021') and CAST(left(FECHA_DEF,4) as INT) != 9999
-		--Estrechamos la busqueda a valores que necesitamos detectar y eliminar los casos donde se curaron
-		group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO), ENTIDAD_NAC	--El orden de agrupacion es importante
+		where NEUMONIA = 1 and YEAR(FECHA_INGRESO) in ('2020')
+		group by YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO)
 	) as T1
-	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)
-	and T1.Mes_Ingreso = MONTH(FECHA_INGRESO) --Comparamos por mes para que se pueda listar
 )
-order by YEAR(FECHA_INGRESO), MONTH(FECHA_INGRESO)
 
 /*****************************************
  9. Listar el top 3 de municipios con menos casos recuperados en el año 2021.
