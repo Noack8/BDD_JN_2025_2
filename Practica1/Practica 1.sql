@@ -98,23 +98,23 @@ having count(*) =   ( --autoreunion
 /*****************************************
 Consulta 02. Listar el municipio con más casos confirmados recuperados por estado y por año.
 Requisitos: Agrupaciones por estado municipio y año
-Significado de los valores de los catálogos: casos_Recuperados es una vista que cita a la gente que se curo
+Significado de los valores de los catálogos: Hay que encontrar el monicipio top por estado y año
 Responsable de la consulta: Juan
-Comentarios: -- aquí, explicar las instrucciones adicionales
-Utilizadas y no explicadas en clase.
+Comentarios: Estaba un poco ambiguo pero son detalles tecnicos
 *****************************************/
-select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, count(*) as total_Recuperados --Sacamo los datos para que se vea shido
-from casos_recuperados	--Uso de la vista de casos confirmados para disminuir la busqueda
-group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), ENTIDAD_NAC	--Agrupamos para poder valorar lo resultados
-having  count(*) = (  --Autoreunion
-	select max(casos_recuperados)	--Buscamos el municipio por estaddo y año con mayor numero de casos recuperados
-	from(
-		select ENTIDAD_NAC, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as Anio_Ingreso,count(*) as Casos_Recuperados --Datos relevantes
-		from casos_recuperados --Vista rapida
-		group by MUNICIPIO_RES, YEAR(FECHA_INGRESO), ENTIDAD_NAC	--El orden de arupacion es importante
-	) as T1 
-	where T1.anio_Ingreso = YEAR(FECHA_INGRESO)	--Usamos la concordancia donde el anio corresponda 
-	and T1.ENTIDAD_NAC = ENTIDAD_NAC  -- Usamos el estado en particular
+select ENTIDAD_RES, entidad, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, COUNT(*) as total_Recuperados
+from casos_recuperados
+inner join cat_entidades on ENTIDAD_RES = clave
+group by ENTIDAD_RES, MUNICIPIO_RES, YEAR(FECHA_INGRESO), entidad
+having COUNT(*) = (
+	select MAX(total_Recuperados)
+	from (
+		select ENTIDAD_RES, MUNICIPIO_RES, YEAR(FECHA_INGRESO) as anio_Ingreso, COUNT(*) as total_Recuperados
+        from casos_recuperados
+        group by ENTIDAD_RES, MUNICIPIO_RES, YEAR(FECHA_INGRESO)
+     ) as subquery
+     where subquery.anio_Ingreso = YEAR(casos_recuperados.FECHA_INGRESO)
+     and subquery.ENTIDAD_RES = casos_recuperados.ENTIDAD_RES
 )
 	
 /*****************************************
