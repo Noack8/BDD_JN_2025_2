@@ -126,82 +126,13 @@ having  count(*) = (  --Autoreunion
  Responsable de la consulta: Keb
  
  Comentarios:
-  Se separó en varias consultas para no realizar varias veces la misma consulta
  *****************************************/
-DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
-DROP TABLE IF EXISTS CASOS_OBESIDAD;
-
 SELECT
-	DIABETES,
-	HIPERTENSION,
-	OBESIDAD,
-	CASE
-		WHEN CLASIFICACION_FINAL IN (1, 2, 3) then 1
-		ELSE 0
-	END AS CONFIRMADO_COVID,
-	COUNT(1) AS CASOS
-INTO CASOS_COMORBILIDADES
+	CAST(COUNT(IIF(DIABETES = 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_DIABETES,
+	CAST(COUNT(IIF(HIPERTENSION = 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_Hipertension,
+	CAST(COUNT(IIF(OBESIDAD= 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_Obesidad
 FROM datoscovid
-GROUP BY
-	OBESIDAD,
-	DIABETES,
-	HIPERTENSION,
-	CLASIFICACION_FINAL
-HAVING (OBESIDAD = 1 OR DIABETES = 1 OR HIPERTENSION = 1);
-
--- Obtener el total de casos por cada enfermedad
-Declare @TOTAL_OBESIDAD int;
-SELECT @TOTAL_OBESIDAD = sum(CASOS)
-FROM CASOS_COMORBILIDADES
-WHERE OBESIDAD = 1;
-
-
-Declare @TOTAL_DIABETES int;
-SELECT @TOTAL_DIABETES = sum(CASOS)
-FROM CASOS_COMORBILIDADES
-WHERE DIABETES = 1;
-
-
-Declare @TOTAL_HIPERTENSION int;
-SELECT @TOTAL_HIPERTENSION = sum(CASOS)
-FROM CASOS_COMORBILIDADES
-WHERE HIPERTENSION = 1;
-
-
-WITH
-	CASOS_COMOR_CONFIRMADA
-	AS
-	(
-		SELECT
-			*
-		FROM
-			CASOS_COMORBILIDADES
-		WHERE CONFIRMADO_COVID = 1
-	)
-
-	SELECT
-		'Obesidad' as Enfermedad,
-		CAST(SUM(CASOS) * 100.0 / @TOTAL_OBESIDAD AS decimal(4, 2)) as PorcentajeConfirmadoCovid
-	FROM CASOS_COMOR_CONFIRMADA
-	GROUP BY OBESIDAD
-	HAVING OBESIDAD = 1
-UNION
-	SELECT
-		'Diabetes' as Enfermedad,
-		CAST(SUM(CASOS) * 100.0 / @TOTAL_DIABETES AS decimal(4, 2)) as PorcentajeConfirmadoCovid
-	FROM CASOS_COMOR_CONFIRMADA
-	GROUP BY DIABETES
-	HAVING DIABETES = 1
-UNION
-	SELECT
-		'Hipertension' as Enfermedad,
-		CAST(SUM(CASOS) * 100.0 / @TOTAL_DIABETES AS decimal(4, 2)) as PorcentajeConfirmadoCovid
-	FROM CASOS_COMOR_CONFIRMADA
-	GROUP BY HIPERTENSION
-	HAVING HIPERTENSION = 1;
-
-DROP TABLE IF EXISTS CASOS_COMORBILIDADES;
-DROP TABLE IF EXISTS CASOS_OBESIDAD;
+WHERE CLASIFICACION_FINAL IN (1, 2, 3);
 
 /*****************************************
 4. Listar los municipios que no tengan casos confirmados en todas las morbilidades: hipertensión, obesidad, diabetes y tabaquismo.
