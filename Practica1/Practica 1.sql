@@ -178,10 +178,11 @@ Responsable de la consulta: Juan
 Comentarios: -- aquí, explicar las instrucciones adicionales
 Utilizadas y no explicadas en clase.
 *****************************************/
-select ENTIDAD_NAC, count(*) as numero_Casos --Resultados esperados
+select ENTIDAD_RES, entidad, count(*) as numero_Casos --Resultados esperados
 from casos_recuperados	--Todos los casos recuperados
+inner join cat_entidades on ENTIDAD_RES = clave
 where NEUMONIA = 1	--1 Significa que si tenian neumonia
-group by ENTIDAD_NAC	--Agrupamos por estados
+group by ENTIDAD_RES, entidad	--Agrupamos por estados
 order by numero_Casos desc	--Los acomodamos en orden porque YOLO
 
 /*****************************************
