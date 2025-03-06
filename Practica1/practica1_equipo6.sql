@@ -157,7 +157,7 @@ WITH CasosMorbilidad AS (
     FROM 
         datoscovid
     WHERE 
-        CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
+        CLASIFICACION_FINAL NOT IN ('1', '2', '3')  -- Casos NO confirmados (sospechosos o no confirmados)
     GROUP BY 
         MUNICIPIO_RES
 )
@@ -166,10 +166,10 @@ SELECT
 FROM 
     CasosMorbilidad
 WHERE 
-    casos_hipertension = 0 
-    AND casos_obesidad = 0 
-    AND casos_diabetes = 0 
-    AND casos_tabaquismo = 0;
+    casos_hipertension > 0 
+    AND casos_obesidad > 0 
+    AND casos_diabetes > 0 
+    AND casos_tabaquismo > 0;
 /*****************************************
 Consulta 05. Listar los estados con más casos recuperados con neumonía.
 Requisitos: Agrupaciones por estado y buscar los casos por neumonia
@@ -401,83 +401,45 @@ Comentarios:
 *****************************************/
 
 WITH CasosPorGenero AS (
-
     SELECT 
-
         SEXO, 
-
         YEAR(FECHA_INGRESO) AS año, 
-
         COUNT(*) AS total_casos
-
     FROM 
-
         datoscovid
-
     WHERE 
-
         CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
-
         AND YEAR(FECHA_INGRESO) IN (2020, 2021)
-
     GROUP BY 
-
         SEXO, YEAR(FECHA_INGRESO)
-
 ),
-
 TotalCasosPorAño AS (
-
     SELECT 
-
         YEAR(FECHA_INGRESO) AS año, 
-
         COUNT(*) AS total
-
     FROM 
-
         datoscovid
-
     WHERE 
-
         CLASIFICACION_FINAL IN ('1', '2', '3')  -- Casos confirmados
-
         AND YEAR(FECHA_INGRESO) IN (2020, 2021)
-
     GROUP BY 
-
         YEAR(FECHA_INGRESO)
-
 )
-
 SELECT 
-
     cpg.año,
-
     CASE 
-
         WHEN cpg.SEXO = 1 THEN 'Mujer'
-
         WHEN cpg.SEXO = 2 THEN 'Hombre'
-
         ELSE 'No especificado'
-
     END AS género,
-
-    CAST(cpg.total_casos * 100.0 / tca.total AS DECIMAL(5, 2)) AS porcentaje
-
+    cpg.total_casos AS cantidad_casos,  -- Cantidad de casos por género y año
+    CAST(cpg.total_casos * 100.0 / tca.total AS DECIMAL(5, 2)) AS porcentaje  -- Porcentaje de casos
 FROM 
-
     CasosPorGenero cpg
-
 JOIN 
-
     TotalCasosPorAño tca ON cpg.año = tca.año
-
 ORDER BY 
-
-    cpg.año, cpg.SEXO;
-
+    cpg.año, cpg.SEXO; 
 /*****************************************
 Consulta 11. Listar el porcentaje de casos hospitalizados por estado en el año 2020.
 Requisitos: Buscar la cantidad de casos para poder hacer calculos de porcentajes
@@ -593,12 +555,12 @@ SELECT
         ELSE 'No especificado'        
     END AS género,
     rango_edad, 
-    CAST(total_casos * 100.0 / (SELECT total FROM TotalCasos) AS DECIMAL(5, 2)) AS porcentaje
+    total_casos AS cantidad_casos,  -- Cantidad de casos por género y rango de edad
+    CAST(total_casos * 100.0 / (SELECT total FROM TotalCasos) AS DECIMAL(5, 2)) AS porcentaje  -- Porcentaje de casos
 FROM 
     CasosPorEdad
 ORDER BY 
     SEXO, rango_edad;
-
 /*****************************************
 Consulta 14. Listar el rango de edad con más casos confirmados y que fallecieron en los años 2020 y 2021.
 Requisitos: categorizar por edades y contar para saber la cantidad de fallecidos y poder listar
