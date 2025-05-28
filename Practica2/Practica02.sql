@@ -108,8 +108,66 @@ create nonclustered index INC_SOD_SalesOrderID on SalesOrderDetail (SalesOrderID
 --5. Generar los planes de ejecucion de las consultas en la base de datos AdventureWorks y
 --y comparar con los planes de ejecucion del punto 4.
 
+---------------------------------------------------------------------------------------------------------------------
+
 --6. Generar los planes de ejecucion de las consultas 3, 4 y 5 de la practica de consultas en la
 --base de datos Covid y proponer indices para mejorar el rendimiento.
+
+--Consulta 3: Listar el porcentaje de casos confirmados en cada una de las siguientes morbilidades 
+--a nivel nacional: diabetes, obesidad e hipertensión.  [Hecho por Keb]
+    
+SELECT
+	CAST(COUNT(IIF(DIABETES = 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_DIABETES,
+	CAST(COUNT(IIF(HIPERTENSION = 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_Hipertension,
+	CAST(COUNT(IIF(OBESIDAD= 1, 1, Null))*100.0/COUNT(*) as DECIMAL(4,2)) as Porcentaje_Obesidad
+FROM datoscovid
+WHERE CLASIFICACION_FINAL IN (1, 2, 3);
+
+create clustered index IC_DC_ID_REGSTRO on datoscovid (ID_REGISTRO)
+create nonclustered index INC_DC_CLASIFICACION on datoscovid (CLASIFICACION_FINAL)
+
+--Consulta 4: Listar los municipios que no tengan casos confirmados en todas las morbilidades: 
+--hipertensión, obesidad, diabetes y tabaquismo.        [Hecho por Armando]
+
+WITH CasosMorbilidad AS (
+    SELECT 
+        MUNICIPIO_RES,
+        SUM(CASE WHEN HIPERTENSION = 1 THEN 1 ELSE 0 END) AS casos_hipertension,
+        SUM(CASE WHEN OBESIDAD = 1 THEN 1 ELSE 0 END) AS casos_obesidad,
+        SUM(CASE WHEN DIABETES = 1 THEN 1 ELSE 0 END) AS casos_diabetes,
+        SUM(CASE WHEN TABAQUISMO = 1 THEN 1 ELSE 0 END) AS casos_tabaquismo
+    FROM 
+        datoscovid
+    WHERE 
+        CLASIFICACION_FINAL NOT IN ('1', '2', '3')  -- Casos NO confirmados (sospechosos o no confirmados)
+    GROUP BY 
+        MUNICIPIO_RES
+)
+SELECT 
+    MUNICIPIO_RES
+FROM 
+    CasosMorbilidad
+WHERE 
+    casos_hipertension > 0 
+    AND casos_obesidad > 0 
+    AND casos_diabetes > 0 
+    AND casos_tabaquismo > 0;
+
+--Consulta 5: Listar los estados con más casos recuperados con neumonía.    [Hecha por Juan]
+
+select ENTIDAD_RES, entidad, count(*) as numero_Casos --Resultados esperados
+from (select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
+      from (select ENTIDAD_UM, ENTIDAD_NAC, ENTIDAD_RES, MUNICIPIO_RES, SEXO, EDAD, FECHA_INGRESO, FECHA_DEF, NEUMONIA, DIABETES, HIPERTENSION, OBESIDAD, TABAQUISMO, CLASIFICACION_FINAL
+            from datoscovid
+            where CLASIFICACION_FINAL in ('1', '2', '3')) as A
+      where CAST(left(FECHA_DEF,4) as INT) = 9999) as B	--Todos los casos recuperados
+inner join cat_entidades on ENTIDAD_RES = clave
+where NEUMONIA = 1	--1 Significa que si tenian neumonia
+group by ENTIDAD_RES, entidad	--Agrupamos por estados
+
+create clustered index IC_CE_ENTIDAD on cat_entidades (clave)
+
+-------------------------------------------------------------------------------------------------------------------
 
 --7. Comparar los planes de ejecucion del punto 6 con los planes de ejecucion de otro equipo.
 
