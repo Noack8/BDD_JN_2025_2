@@ -29,7 +29,7 @@ from AdventureWorks.Person.Person
 	--A.Listar el producto mas vendido de cada una de las categorias registradas en la base
 	--de datos
 	
---Consulta final A v1
+--Consulta final A v2.2
 select PS.ProductCategoryID, PS.ProductID, PS.Total
 from ( select T4.ProductID, T4.ProductCategoryID, sum(T3.OrderQty) Total
        from SalesOrderDetail as T3
@@ -53,7 +53,7 @@ where PS.Total = ( select max(SUM_TQ)
 	--B.Listar el nombre de los clientes con mas ordenes por cada uno de los territorios
 	--registrados en la base de datos
 	
---Consulta final B v1
+--Consulta final B v1.2
 select TerritoryID, FirstName, LastName, Compras_realizadas
 from ( select T1.TerritoryID, T4.FirstName, T4.LastName, 
               count(*) as Compras_realizadas, 
