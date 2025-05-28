@@ -1,6 +1,8 @@
 -- 1.Crear una base de datos con el nombre practicaPE
 create database practicaPE
 
+--------------------------------------------------------------------------------------------------------------------------
+	
 --2.Copiar a la base de datos practicaPE las siguientes tablas de la base de datos
 --AdvetureWorks
 
@@ -21,6 +23,8 @@ select * into ProductSubcategory from AdventureWorks.Production.ProductSubcatego
 select BusinessEntityID, FirstName, LastName into Person
 from AdventureWorks.Person.Person
 
+----------------------------------------------------------------------------------------------------------------
+	
 --3.Codificar las siguientes consultas
 	--A.Listar el producto mas vendido de cada una de las categorias registradas en la base
 	--de datos
@@ -76,8 +80,9 @@ WHERE NOT EXISTS (SELECT *
 									FROM SalesOrderDetail AS OD2
 									WHERE OD.SalesOrderID = OD2.SalesOrderID
 									AND OD2.ProductID = P.ProductID ))
---Se puede implementar esta solucion con JOIN??
 
+-------------------------------------------------------------------------------------------------------------------------
+	
 --4. Generar los planes de ejecucion de las consultas en la base de datos practicaPE y proponer
 --indices para mejorar el rendimiento de las consultas.
 
@@ -85,9 +90,6 @@ WHERE NOT EXISTS (SELECT *
 create clustered index IC_P_PRODUCTID on Product (ProductID)
 create clustered index IC_PSC_PRODUCTSUBCATEGORY on ProductSubcategory (ProductSubcategoryID)
 create nonclustered index INC_SOD_OQTY_PID on SalesOrderDetail (OrderQty) include (ProductID)
-
-select * from
---drop index INC_SOD_SALESORDERID on SalesOrderDetail
 
 --Indices relacionados a la consulta B
 create clustered index IC_C_CUSTOMERID on Customer (CustomerID)
@@ -98,8 +100,10 @@ create nonclustered index INC_SOH_TerritoryID on SalesOrderHeader (TerritoryID)
 create clustered index IC_P_BusinessEntityID on Person (BusinessEntityID)
 create nonclustered index IC_P_FIRSTNAME_LAST on Person (FirstName) include (LastName)
 
-
-select distinct * from Person
+--Indices relacionados a la consulta C
+create clustered index IC_SOD_SalesOrderDetailID on SalesOrderDetail (SalesOrderDetailID)
+create nonclustered index INC_SOD_SalesOrderID on SalesOrderDetail (SalesOrderID)
+------------------------------------------------------------------------------------------------------------------
 
 --5. Generar los planes de ejecucion de las consultas en la base de datos AdventureWorks y
 --y comparar con los planes de ejecucion del punto 4.
