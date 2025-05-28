@@ -103,11 +103,58 @@ create nonclustered index IC_P_FIRSTNAME_LAST on Person (FirstName) include (Las
 --Indices relacionados a la consulta C
 create clustered index IC_SOD_SalesOrderDetailID on SalesOrderDetail (SalesOrderDetailID)
 create nonclustered index INC_SOD_SalesOrderID on SalesOrderDetail (SalesOrderID)
+	
 ------------------------------------------------------------------------------------------------------------------
 
 --5. Generar los planes de ejecucion de las consultas en la base de datos AdventureWorks y
 --y comparar con los planes de ejecucion del punto 4.
 
+--Consulta final A adventureWorks
+select PS.ProductCategoryID, PS.ProductID, PS.Total
+from ( select T4.ProductID, T4.ProductCategoryID, sum(T3.OrderQty) Total
+       from Sales.SalesOrderDetail as T3
+       inner join ( select T1.ProductID, T1.ProductSubcategoryID, T2.ProductCategoryID
+                    from Production.Product as T1
+                    inner join Production.ProductSubcategory as T2
+                    on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4 
+       on T3.ProductID = T4.ProductID
+       group by T4.ProductID, T4.ProductCategoryID) as PS
+where PS.Total = ( select max(SUM_TQ)
+                   from ( select T4b.ProductCategoryID, sum(T3b.OrderQty) as SUM_TQ
+                          from Sales.SalesOrderDetail as T3b
+                          inner join ( select T1b.ProductID, T1b.ProductSubcategoryID, T2b.ProductCategoryID
+                                       from Production.Product as T1b
+                                       inner join Production.ProductSubcategory as T2b
+                                       on T1b.ProductSubcategoryID = T2b.ProductSubcategoryID) as T4b 
+						  on T3b.ProductID = T4b.ProductID
+                          where T4b.ProductCategoryID = PS.ProductCategoryID
+                          group by T4b.ProductID, T4b.ProductCategoryID) as CategorySales)
+
+--Consulta final B adventureWorks
+select TerritoryID, FirstName, LastName, Compras_realizadas
+from ( select T1.TerritoryID, T4.FirstName, T4.LastName, 
+              count(*) as Compras_realizadas, 
+			  row_number() over (partition by T1.TerritoryID order by count(*) desc) as rn
+       from Sales.SalesOrderHeader as T1
+       inner join Sales.Customer as T3 
+	   on T1.CustomerID = T3.CustomerID
+       inner join Person.Person as T4 
+	   on T3.PersonID = T4.BusinessEntityID
+       group by T1.TerritoryID, T3.CustomerID, T4.FirstName, T4.LastName ) as rango
+where rn = 1
+
+--Consulta final C adventureWorks
+SELECT DISTINCT Salesorderid
+FROM Sales.SalesOrderDetail AS OD
+WHERE NOT EXISTS (SELECT *
+				  FROM (select ProductID
+						from Sales.SalesOrderDetail
+						where salesorderid = 43676) as P
+				  WHERE NOT EXISTS (SELECT *
+									FROM Sales.SalesOrderDetail AS OD2
+									WHERE OD.SalesOrderID = OD2.SalesOrderID
+									AND OD2.ProductID = P.ProductID ))
+	
 ---------------------------------------------------------------------------------------------------------------------
 
 --6. Generar los planes de ejecucion de las consultas 3, 4 y 5 de la practica de consultas en la
