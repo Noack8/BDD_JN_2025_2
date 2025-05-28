@@ -1,0 +1,179 @@
+-- 1.Crear una base de datos con el nombre practicaPE
+create database practicaPE
+
+--2.Copiar a la base de datos practicaPE las siguientes tablas de la base de datos
+--AdvetureWorks
+
+select * into SalesOrderHeader
+from AdventureWorks.Sales.SalesOrderHeader
+
+select * into SalesOrderDetail
+from AdventureWorks.Sales.SalesOrderDetail
+
+select * into Customer
+from AdventureWorks.Sales.Customer
+
+select * into SalesTerritory
+from AdventureWorks.Sales.SalesTerritory
+
+select * into Product
+from AdventureWorks.Production.Product
+
+select * into ProductCategory
+from AdventureWorks.Production.ProductCategory
+
+select * into ProductSubcategory
+from AdventureWorks.Production.ProductSubcategory
+
+select BusinessEntityID, FirstName, LastName into Person
+from AdventureWorks.Person.Person
+
+--3.Codificar las siguientes consultas
+	--A.Listar el producto mas vendido de cada una de las categorias registradas en la base
+	--de datos
+--Version de enlistar los producto vendidos y sus categorias
+select SalesOrderID, OrderQty, T3.ProductID, ProductCategoryID
+from SalesOrderDetail as T3
+inner join(select ProductID, T1.ProductSubcategoryID, ProductCategoryID
+		   from Product as T1 inner join (select ProductSubcategoryID, ProductCategoryID
+										  from ProductSubcategory) as T2
+		                      on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4
+on T3.ProductID = T4.ProductID
+
+--Consulta final A
+select PS.ProductCategoryID, PS.ProductID, PS.Total
+from ( select T4.ProductID, T4.ProductCategoryID, sum(T3.OrderQty) Total
+       from SalesOrderDetail as T3
+       inner join ( select T1.ProductID, T1.ProductSubcategoryID, T2.ProductCategoryID
+                    from Product as T1
+                    inner join ProductSubcategory as T2
+                    on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4 
+       on T3.ProductID = T4.ProductID
+       group by T4.ProductID, T4.ProductCategoryID) as PS
+where PS.Total = ( select max(SUM_TQ)
+                   from ( select T4b.ProductCategoryID, sum(T3b.OrderQty) as SUM_TQ
+                          from SalesOrderDetail as T3b
+                          inner join ( select T1b.ProductID, T1b.ProductSubcategoryID, T2b.ProductCategoryID
+                                       from Product as T1b
+                                       inner join ProductSubcategory as T2b
+                                       on T1b.ProductSubcategoryID = T2b.ProductSubcategoryID) as T4b 
+						  on T3b.ProductID = T4b.ProductID
+                          where T4b.ProductCategoryID = PS.ProductCategoryID
+                          group by T4b.ProductID, T4b.ProductCategoryID) as CategorySales)
+
+	--B.Listar el nombre de los clientes con mas ordenes por cada uno de los territorios
+	--registrados en la base de datos
+--Enlistar alos clientes por territorio
+select SalesOrderID, T1.CustomerID, TerritoryID, T2.*
+from SalesOrderHeader as T1
+inner join ( select CustomerID, PersonID, T4.FirstName, T4.LastName
+			 from Customer as T3
+			 inner join ( select *
+						  from Person ) as T4
+			 on T3.PersonID = T4.BusinessEntityID ) as T2
+on T1.CustomerID = T2.CustomerID
+
+--Consulta final B
+select TerritoryID, FirstName, LastName, Compras_realizadas
+from ( select T1.TerritoryID, T4.FirstName, T4.LastName, 
+              count(*) as Compras_realizadas, 
+			  row_number() over (partition by T1.TerritoryID order by count(*) desc) as rn
+       from SalesOrderHeader as T1
+       inner join Customer as T3 
+	   on T1.CustomerID = T3.CustomerID
+       inner join Person as T4 
+	   on T3.PersonID = T4.BusinessEntityID
+       group by T1.TerritoryID, T3.CustomerID, T4.FirstName, T4.LastName ) as rango
+where rn = 1
+
+
+	--C.Listar los datos generales de las ordenes que tengan al menos los mismos productos
+	--de la orden con SalesOrderId = 43676
+
+SELECT DISTINCT Salesorderid
+FROM SalesOrderDetail AS OD
+WHERE NOT EXISTS (SELECT *
+				  FROM (select ProductID
+						from SalesOrderDetail
+						where salesorderid = 43676) as P
+				  WHERE NOT EXISTS (SELECT *
+									FROM SalesOrderDetail AS OD2
+									WHERE OD.SalesOrderID = OD2.SalesOrderID
+									AND OD2.ProductID = P.ProductID ))
+--Se puede implementar esta solucion con JOIN??
+
+--4. Generar los planes de ejecucion de las consultas en la base de datos practicaPE y proponer
+--indices para mejorar el rendimiento de las consultas.
+
+--Indices relacionados a la consulta A
+create clustered index IC_P_PRODUCTID on Product (ProductID)
+create clustered index IC_PSC_PRODUCTSUBCATEGORY on ProductSubcategory (ProductSubcategoryID)
+create nonclustered index INC_SOD_OQTY_PID on SalesOrderDetail (OrderQty) include (ProductID)
+
+select * from
+--drop index INC_SOD_SALESORDERID on SalesOrderDetail
+
+--Indices relacionados a la consulta B
+create clustered index IC_C_CUSTOMERID on Customer (CustomerID)
+
+create clustered index IC_SOH_SalesOrderID on SalesOrderHeader (SalesOrderID)
+create nonclustered index INC_SOH_TerritoryID on SalesOrderHeader (TerritoryID)
+
+create clustered index IC_P_BusinessEntityID on Person (BusinessEntityID)
+create nonclustered index IC_P_FIRSTNAME_LAST on Person (FirstName) include (LastName)
+
+
+select distinct * from Person
+
+--5. Generar los planes de ejecucion de las consultas en la base de datos AdventureWorks y
+--y comparar con los planes de ejecucion del punto 4.
+
+--6. Generar los planes de ejecucion de las consultas 3, 4 y 5 de la practica de consultas en la
+--base de datos Covid y proponer indices para mejorar el rendimiento.
+
+--7. Comparar los planes de ejecucion del punto 6 con los planes de ejecucion de otro equipo.
+
+--8. Conclusiones por equipo argumentando la seleccion de los indices.
+
+
+-- No forma parte de la practica
+           select ProductID, T1.ProductSubcategoryID, ProductCategoryID
+		   from Product as T1 inner join (select ProductSubcategoryID, ProductCategoryID
+										  from ProductSubcategory) as T2
+		                      on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4
+
+select ProductCategoryID, max(veces)
+from(
+select T3.ProductID, ProductCategoryID, sum(OrderQty) veces 
+from SalesOrderDetail as T3
+inner join(select ProductID, T1.ProductSubcategoryID, ProductCategoryID
+		   from Product as T1 inner join (select ProductSubcategoryID, ProductCategoryID
+										  from ProductSubcategory) as T2
+		                      on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4
+on T3.ProductID = T4.ProductID
+group by T3.ProductID, ProductCategoryID
+) as A
+group by ProductCategoryID
+
+
+--Consulta final A
+select PS.ProductCategoryID, PS.ProductID, PS.Total
+from ( select T4.ProductID, T4.ProductCategoryID, sum(T3.OrderQty) Total
+       from SalesOrderDetail as T3
+       inner join ( select T1.ProductID, T1.ProductSubcategoryID, T2.ProductCategoryID
+                    from Product as T1
+                    inner join ProductSubcategory as T2
+                    on T1.ProductSubcategoryID = T2.ProductSubcategoryID) as T4 
+       on T3.ProductID = T4.ProductID
+       group by T4.ProductID, T4.ProductCategoryID) as PS
+where PS.Total = ( select max(SUM_TQ)
+                   from ( select T4b.ProductCategoryID, sum(T3b.OrderQty) as SUM_TQ
+                          from SalesOrderDetail as T3b
+                          inner join ( select T1b.ProductID, T1b.ProductSubcategoryID, T2b.ProductCategoryID
+                                       from Product as T1b
+                                       inner join ProductSubcategory as T2b
+                                       on T1b.ProductSubcategoryID = T2b.ProductSubcategoryID) as T4b 
+						  on T3b.ProductID = T4b.ProductID
+                          where T4b.ProductCategoryID = PS.ProductCategoryID
+                          group by T4b.ProductID, T4b.ProductCategoryID) as CategorySales)
+
