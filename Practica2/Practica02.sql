@@ -170,8 +170,10 @@ SELECT
 FROM datoscovid
 WHERE CLASIFICACION_FINAL IN (1, 2, 3);
 
+CREATE NONCLUSTERED INDEX INC_DC_CF_3 ON datoscovid (CLASIFICACION_FINAL) INCLUDE ([DIABETES],[HIPERTENSION],[OBESIDAD])
 create clustered index IC_DC_ID_REGSTRO on datoscovid (ID_REGISTRO)
 create nonclustered index INC_DC_CLASIFICACION on datoscovid (CLASIFICACION_FINAL)
+
 
 --Consulta 4: Listar los municipios que no tengan casos confirmados en todas las morbilidades: 
 --hipertensión, obesidad, diabetes y tabaquismo.        [Hecho por Armando]
@@ -200,6 +202,10 @@ WHERE
     AND casos_diabetes > 0 
     AND casos_tabaquismo > 0;
 
+
+CREATE NONCLUSTERED INDEX INC_DC_CF_5 ON datoscovid ([CLASIFICACION_FINAL]) INCLUDE ([MUNICIPIO_RES],[DIABETES],[HIPERTENSION],[OBESIDAD],[TABAQUISMO])
+
+
 --Consulta 5: Listar los estados con más casos recuperados con neumonía.    [Hecha por Juan]
 
 select ENTIDAD_RES, entidad, count(*) as numero_Casos --Resultados esperados
@@ -212,7 +218,9 @@ inner join cat_entidades on ENTIDAD_RES = clave
 where NEUMONIA = 1	--1 Significa que si tenian neumonia
 group by ENTIDAD_RES, entidad	--Agrupamos por estados
 
+CREATE NONCLUSTERED INDEX INC_DC_NEU_CF_2 ON datoscovid ([NEUMONIA],[CLASIFICACION_FINAL]) INCLUDE ([ENTIDAD_RES],[FECHA_DEF])
 create clustered index IC_CE_ENTIDAD on cat_entidades (clave)
+
 
 -------------------------------------------------------------------------------------------------------------------
 
