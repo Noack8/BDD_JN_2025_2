@@ -4,7 +4,7 @@ WITH CasosPorMes AS (
 	FROM OPENQUERY(E6_NODO_NORTE, 
 	'SELECT 
 		c.ENTIDAD_RES,
-		YEAR(c.fecha_ingreso) AS año,
+		YEAR(c.fecha_ingreso) AS anio,
 		MONTH(c.fecha_ingreso) AS mes,
 		COUNT(*) AS total_casos
 	FROM e6_covid_norte.dbo.datoscovid c
@@ -18,7 +18,7 @@ WITH CasosPorMes AS (
 	FROM OPENQUERY(E6_NODO_OCCIDENTE_Y_OTROS, 
 	'SELECT 
 		c.ENTIDAD_RES,
-		YEAR(c.fecha_ingreso) AS año,
+		YEAR(c.fecha_ingreso) AS anio,
 		MONTH(c.fecha_ingreso) AS mes,
 		COUNT(*) AS total_casos
 	FROM e6_covid_occidente_y_otros.dbo.datoscovid c
@@ -32,7 +32,7 @@ WITH CasosPorMes AS (
 	FROM OPENQUERY(E6_NODO_SUR, 
 	'SELECT 
 		c.ENTIDAD_RES,
-		YEAR(c.fecha_ingreso) AS año,
+		YEAR(c.fecha_ingreso) AS anio,
 		MONTH(c.fecha_ingreso) AS mes,
 		COUNT(*) AS total_casos
 	FROM e6_covid_sur.dbo.datoscovid c
@@ -47,14 +47,14 @@ WITH CasosPorMes AS (
 		'SELECT *
 		FROM OPENQUERY(MYSQL_8,
 			''SELECT
-				c.ENTIDAD_RES,
-				YEAR(c.fecha_ingreso) AS año,
-				MONTH(c.fecha_ingreso) AS mes,
+				CAST(c.ENTIDAD_RES as CHAR(2)),
+				CAST(YEAR(c.fecha_ingreso) as decimal(4,0)) AS anio,
+				CAST(MONTH(c.fecha_ingreso) as decimal(4,0)) AS mes,
 				COUNT(*) AS total_casos
-			FROM e6_covid_sur.dbo.datoscovid c
+			FROM e6_covid_oriente.datoscovid c
 			WHERE c.CLASIFICACION_FINAL IN (1, 2, 3, 6) -- Confirmados y sospechosos
 			  AND YEAR(c.fecha_ingreso) IN (2020, 2021)
-			GROUP BY c.ENTIDAD_RES, YEAR(c.fecha_ingreso), MONTH(c.fecha_ingreso)''
+			GROUP BY CAST(c.ENTIDAD_RES as CHAR(2)), YEAR(c.fecha_ingreso), MONTH(c.fecha_ingreso)''
 		);'
 	)
 ),
@@ -62,18 +62,18 @@ WITH CasosPorMes AS (
 RankingMeses AS (
 	SELECT 
 		ENTIDAD_RES,
-		año,
+		anio,
 		mes,
 		total_casos,
-		ROW_NUMBER() OVER (PARTITION BY ENTIDAD_RES, año ORDER BY total_casos DESC) AS ranking
+		ROW_NUMBER() OVER (PARTITION BY ENTIDAD_RES, anio ORDER BY total_casos DESC) AS ranking
 	FROM CasosPorMes
 )
 
 SELECT 
 	ENTIDAD_RES AS clave_entidad,
-	año,
+	anio,
 	mes,
 	total_casos
-FROM RankingMeses
+FROM RankingMeses 
 WHERE ranking = 1
-ORDER BY año;
+ORDER BY anio;
