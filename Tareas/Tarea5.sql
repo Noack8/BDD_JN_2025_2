@@ -25,8 +25,7 @@ FROM
          ''''''''ORIENTE'''''''' AS REGION 
      FROM e6_covid_oriente.datoscovid 
      WHERE CLASIFICACION_FINAL IN (
-        SELECT value FROM STRING_SPLIT(@ListaClasificacionFinal, '''''''','''''''')
-    )
+        SELECT val FROM JSON_TABLE(CONCAT(''''''''["'''''''', REPLACE(''''''''@ListaClasificacionFinal'''''''', '''''''','''''''', ''''''''","''''''''), ''''''''"]''''''''), ''''''''$[*]'''''''' COLUMNS(val INT PATH ''''''''$''''''''))
      '''')
     '') 
 UNION
